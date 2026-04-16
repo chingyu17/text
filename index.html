@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打字練習站</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            width: 100%;
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .display-area {
+            background: #fff;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-size: 1.3rem;
+            min-height: 100px;
+            user-select: none;
+        }
+
+        .char { color: #a0aec0; border-bottom: 2px solid transparent; }
+        .char.correct { color: var(--success-color); }
+        .char.incorrect { background-color: #fed7d7; color: var(--error-color); }
+        .char.current { border-bottom: 3px solid var(--primary-color); }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover { opacity: 0.9; }
+        .btn-secondary { background: #718096; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="text-align:center; color:#2c3e50;">打字自主練習</h1>
+
+    <div class="stats">
+        <div>時間: <span id="timer">0</span>s</div>
+        <div>WPM: <span id="wpm">0</span></div>
+        <div>正確率: <span id="accuracy">100</span>%</div>
+    </div>
+
+    <div class="display-area" id="quoteDisplay">正在讀取文章庫...</div>
+    
+    <textarea id="quoteInput" placeholder="在此開始打字..." autofocus spellcheck="false"></textarea>
+
+    <div class="controls">
+        <button onclick="loadQuote('zh')">下一篇中文</button>
+        <button onclick="loadQuote('en')">Next English</button>
+        <button class="btn-secondary" onclick="resetGame()">重置</button>
+    </div>
+</div>
+
+<script>
+    let allQuotes = { zh: [], en: [] };
+    const quoteDisplay = document.getElementById('quoteDisplay');
+    const quoteInput = document.getElementById('quoteInput');
+    const timerElement = document.getElementById('timer');
+    const wpmElement = document.getElementById('wpm');
+    const accuracyElement = document.getElementById('accuracy');
+
+    let startTime, timerInterval, isStarted = false, currentQuoteText = "";
+
+    // 關鍵功能：從 JSON 抓取數據
+    async function init() {
+        try {
+            const response = await fetch('quotes.json');
+            allQuotes = await response.json();
+            loadQuote('zh');
+        } catch (e) {
+            quoteDisplay.innerText = "讀取錯誤：請確保 quotes.json 檔案在同資料夾下，且透過伺服器開啟 (如 VS Code Live Server)。";
+        }
+    }
+
+    function loadQuote(lang) {
+        resetGame();
+        const pool = allQuotes[lang];
+        if (!pool || pool.length === 0) return;
+        
+        currentQuoteText = pool[Math.floor(Math.random() * pool.length)];
+        quoteDisplay.innerHTML = '';
+        currentQuoteText.split('').forEach((char, index) => {
+            const span = document.createElement('span');
+            span.innerText = char;
+            span.classList.add('char');
+            if(index === 0) span.classList.add('current');
+            quoteDisplay.appendChild(span);
+        });
+        quoteInput.focus();
+    }
+
+    quoteInput.addEventListener('input', () => {
+        if (!isStarted && quoteInput.value.length > 0) {
+            startTime = new Date();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((new Date() - startTime) / 1000);
+                timerElement.innerText = elapsed;
+                if(elapsed > 0) wpmElement.innerText = Math.round((quoteInput.value.length / 5) / (elapsed / 60));
+            }, 1000);
+            isStarted = true;
+        }
+
+        const spans = quoteDisplay.querySelectorAll('span');
+        const inputChars = quoteInput.value.split('');
+        let corrects = 0;
+
+        spans.forEach((span, i) => {
+            const char = inputChars[i];
+            span.classList.remove('current');
+            if (char == null) {
+                span.classList.remove('correct', 'incorrect');
+                if (i === inputChars.length) span.classList.add('current');
+            } else if (char === span.innerText) {
+                span.classList.add('correct');
+                span.classList.remove('incorrect');
+                corrects++;
+            } else {
+                span.classList.remove('correct');
+                span.classList.add('incorrect');
+            }
+        });
+
+        accuracyElement.innerText = inputChars.length > 0 ? Math.floor((corrects / inputChars.length) * 100) : 100;
+
+        if (inputChars.length >= currentQuoteText.length) {
+            clearInterval(timerInterval);
+            quoteInput.disabled = true;
+            setTimeout(() => alert("完成練習！"), 200);
+        }
+    });
+
+    function resetGame() {
+        clearInterval(timerInterval);
+        isStarted = false;
+        quoteInput.disabled = false;
+        quoteInput.value = '';
+        timerElement.innerText = "0";
+        wpmElement.innerText = "0";
+        accuracyElement.innerText = "100";
+    }
+
+    init();
+</script>
+</body>
+</html>
