@@ -3,204 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>打字練習站</title>
+    <title>打字競技場</title>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --success-color: #27ae60;
-            --error-color: #e74c3c;
-            --bg-color: #f4f7f6;
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --error: #e74c3c; --bg: #f5f7fa; }
+        body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .wrapper { max-width: 1100px; width: 100%; display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+        @media (max-width: 900px) { .wrapper { grid-template-columns: 1fr; } }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { margin: 0 0 20px 0; font-size: 1.5rem; color: var(--primary); border-left: 5px solid var(--accent); padding-left: 15px; }
+        
+        /* 選單與統計 */
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
+        select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; font-size: 1rem; }
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-item { background: #f8fafc; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; }
+        .stat-item small { display: block; color: #64748b; font-size: 0.8rem; margin-bottom: 4px; }
+        .stat-item b { font-size: 1.3rem; color: var(--primary); }
+
+        /* 輸入區域 */
+        .text-display { 
+            background: #fff; padding: 25px; border: 1px solid #e2e8f0; border-radius: 10px; 
+            font-size: 1.4rem; line-height: 1.8; margin-bottom: 20px; min-height: 120px; 
+            white-space: pre-wrap; word-wrap: break-word; user-select: none;
         }
+        .char { color: #cbd5e1; border-bottom: 2px solid transparent; }
+        .char.correct { color: #1e293b; }
+        .char.incorrect { background: #fee2e2; color: var(--error); border-radius: 2px; }
+        .char.current { border-bottom: 3px solid var(--accent); background: #e0f2fe; }
 
-        body {
-            font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
-            background-color: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
+        textarea { 
+            width: 100%; height: 110px; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; 
+            border-radius: 10px; resize: none; outline: none; transition: 0.2s; box-sizing: border-box;
         }
+        textarea:focus { border-color: var(--accent); background: #fff; }
 
-        .container {
-            max-width: 850px;
-            width: 100%;
-            background: white;
-            padding: 35px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        /* 排行榜 */
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .history-table th { text-align: left; font-size: 0.8rem; color: #94a3b8; padding: 10px; border-bottom: 1px solid #f1f5f9; }
+        .history-table td { padding: 12px 10px; font-size: 0.9rem; border-bottom: 1px solid #f8fafc; }
+        .rank-tag { padding: 3px 7px; border-radius: 4px; font-size: 0.75rem; color: white; font-weight: bold; }
+        .zh-bg { background: #f59e0b; } .en-bg { background: #3b82f6; }
+
+        button { 
+            padding: 10px 25px; background: var(--primary); color: white; border: none; 
+            border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;
         }
-
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            background: #edf2f7;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            font-weight: bold;
-        }
-
-        .display-area {
-            background: #fff;
-            padding: 25px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            line-height: 1.8;
-            font-size: 1.3rem;
-            min-height: 100px;
-            user-select: none;
-        }
-
-        .char { color: #a0aec0; border-bottom: 2px solid transparent; }
-        .char.correct { color: var(--success-color); }
-        .char.incorrect { background-color: #fed7d7; color: var(--error-color); }
-        .char.current { border-bottom: 3px solid var(--primary-color); }
-
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 15px;
-            font-size: 1.1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            resize: none;
-            outline: none;
-            box-sizing: border-box;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-
-        button {
-            padding: 12px 20px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            background: var(--primary-color);
-            color: white;
-            font-weight: bold;
-        }
-
-        button:hover { opacity: 0.9; }
-        .btn-secondary { background: #718096; }
+        button:hover { background: var(--accent); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1 style="text-align:center; color:#2c3e50;">打字自主練習</h1>
+<div class="wrapper">
+    <div class="card">
+        <h2>打字練習中心</h2>
+        
+        <div class="toolbar">
+            <select id="langMenu" onchange="syncArticles()">
+                <option value="zh">中文模式</option>
+                <option value="en">English Mode</option>
+            </select>
+            <select id="articleMenu"></select>
+            <button onclick="readyGo()">開始練習</button>
+        </div>
 
-    <div class="stats">
-        <div>時間: <span id="timer">0</span>s</div>
-        <div>WPM: <span id="wpm">0</span></div>
-        <div>正確率: <span id="accuracy">100</span>%</div>
+        <div class="stats-bar">
+            <div class="stat-item"><small>時間</small><b id="t_time">0</b>s</div>
+            <div class="stat-item"><small>WPM</small><b id="t_wpm">0</b></div>
+            <div class="stat-item"><small>正確率</small><b id="t_acc">100</b>%</div>
+            <div class="stat-item"><small>錯字數</small><b id="t_err">0</b></div>
+        </div>
+
+        <div class="text-display" id="displayBox">請先選擇文章並點擊開始...</div>
+        <textarea id="userInput" placeholder="在此輸入..." disabled></textarea>
     </div>
 
-    <div class="display-area" id="quoteDisplay">正在讀取文章庫...</div>
-    
-    <textarea id="quoteInput" placeholder="在此開始打字..." autofocus spellcheck="false"></textarea>
-
-    <div class="controls">
-        <button onclick="loadQuote('zh')">下一篇中文</button>
-        <button onclick="loadQuote('en')">Next English</button>
-        <button class="btn-secondary" onclick="resetGame()">重置</button>
+    <div class="card">
+        <h2>排名紀錄 (Top 10)</h2>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>類型/文章</th>
+                    <th>WPM</th>
+                    <th>準確/錯誤</th>
+                </tr>
+            </thead>
+            <tbody id="rankBody"></tbody>
+        </table>
+        <button onclick="clearData()" style="width:100%; margin-top:20px; background:#ef4444;">清空本地紀錄</button>
     </div>
 </div>
 
+<script src="articles.js"></script>
+
 <script>
-    let allQuotes = { zh: [], en: [] };
-    const quoteDisplay = document.getElementById('quoteDisplay');
-    const quoteInput = document.getElementById('quoteInput');
-    const timerElement = document.getElementById('timer');
-    const wpmElement = document.getElementById('wpm');
-    const accuracyElement = document.getElementById('accuracy');
+    const displayBox = document.getElementById('displayBox');
+    const userInput = document.getElementById('userInput');
+    const langMenu = document.getElementById('langMenu');
+    const articleMenu = document.getElementById('articleMenu');
+    
+    let timer, startTime, isActive = false, targetText = "", targetTitle = "";
 
-    let startTime, timerInterval, isStarted = false, currentQuoteText = "";
-
-    // 關鍵功能：從 JSON 抓取數據
-    async function init() {
-        try {
-            const response = await fetch('quotes.json');
-            allQuotes = await response.json();
-            loadQuote('zh');
-        } catch (e) {
-            quoteDisplay.innerText = "讀取錯誤：請確保 quotes.json 檔案在同資料夾下，且透過伺服器開啟 (如 VS Code Live Server)。";
-        }
+    // 初始化選單
+    function syncArticles() {
+        const lang = langMenu.value;
+        articleMenu.innerHTML = articleDB[lang].map((item, i) => `<option value="${i}">${item.title}</option>`).join('');
     }
 
-    function loadQuote(lang) {
-        resetGame();
-        const pool = allQuotes[lang];
-        if (!pool || pool.length === 0) return;
-        
-        currentQuoteText = pool[Math.floor(Math.random() * pool.length)];
-        quoteDisplay.innerHTML = '';
-        currentQuoteText.split('').forEach((char, index) => {
-            const span = document.createElement('span');
-            span.innerText = char;
-            span.classList.add('char');
-            if(index === 0) span.classList.add('current');
-            quoteDisplay.appendChild(span);
-        });
-        quoteInput.focus();
+    // 開始遊戲
+    function readyGo() {
+        const lang = langMenu.value;
+        const idx = articleMenu.value;
+        const data = articleDB[lang][idx];
+        targetText = data.content;
+        targetTitle = data.title;
+
+        // 重置狀態
+        clearInterval(timer);
+        isActive = false;
+        userInput.value = "";
+        userInput.disabled = false;
+        userInput.focus();
+        document.getElementById('t_time').innerText = "0";
+        document.getElementById('t_wpm').innerText = "0";
+        document.getElementById('t_acc').innerText = "100";
+        document.getElementById('t_err').innerText = "0";
+
+        // 渲染文章
+        displayBox.innerHTML = targetText.split('').map((c, i) => 
+            `<span class="char ${i===0?'current':''}">${c}</span>`
+        ).join('');
     }
 
-    quoteInput.addEventListener('input', () => {
-        if (!isStarted && quoteInput.value.length > 0) {
+    userInput.addEventListener('input', () => {
+        if (!isActive) {
             startTime = new Date();
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((new Date() - startTime) / 1000);
-                timerElement.innerText = elapsed;
-                if(elapsed > 0) wpmElement.innerText = Math.round((quoteInput.value.length / 5) / (elapsed / 60));
-            }, 1000);
-            isStarted = true;
+            timer = setInterval(refreshStats, 1000);
+            isActive = true;
         }
 
-        const spans = quoteDisplay.querySelectorAll('span');
-        const inputChars = quoteInput.value.split('');
+        const inputVal = userInput.value.split('');
+        const spans = displayBox.querySelectorAll('.char');
         let corrects = 0;
+        let errors = 0;
 
         spans.forEach((span, i) => {
-            const char = inputChars[i];
             span.classList.remove('current');
-            if (char == null) {
+            if (inputVal[i] == null) {
                 span.classList.remove('correct', 'incorrect');
-                if (i === inputChars.length) span.classList.add('current');
-            } else if (char === span.innerText) {
+                if (i === inputVal.length) span.classList.add('current');
+            } else if (inputVal[i] === span.innerText) {
                 span.classList.add('correct');
                 span.classList.remove('incorrect');
                 corrects++;
             } else {
-                span.classList.remove('correct');
                 span.classList.add('incorrect');
+                span.classList.remove('correct');
+                errors++;
             }
         });
 
-        accuracyElement.innerText = inputChars.length > 0 ? Math.floor((corrects / inputChars.length) * 100) : 100;
+        document.getElementById('t_err').innerText = errors;
+        document.getElementById('t_acc').innerText = inputVal.length > 0 ? Math.floor((corrects / inputVal.length) * 100) : 100;
 
-        if (inputChars.length >= currentQuoteText.length) {
-            clearInterval(timerInterval);
-            quoteInput.disabled = true;
-            setTimeout(() => alert("完成練習！"), 200);
-        }
+        if (inputVal.length >= targetText.length) finish();
     });
 
-    function resetGame() {
-        clearInterval(timerInterval);
-        isStarted = false;
-        quoteInput.disabled = false;
-        quoteInput.value = '';
-        timerElement.innerText = "0";
-        wpmElement.innerText = "0";
-        accuracyElement.innerText = "100";
+    function refreshStats() {
+        const now = Math.floor((new Date() - startTime) / 1000);
+        document.getElementById('t_time').innerText = now;
+        if (now > 0) {
+            // WPM: (總字數/5) / 分鐘
+            const wpm = Math.round((userInput.value.length / 5) / (now / 60));
+            document.getElementById('t_wpm').innerText = wpm;
+        }
     }
 
-    init();
+    function finish() {
+        clearInterval(timer);
+        userInput.disabled = true;
+        
+        const record = {
+            lang: langMenu.value,
+            title: targetTitle,
+            wpm: document.getElementById('t_wpm').innerText,
+            acc: document.getElementById('t_acc').innerText,
+            err: document.getElementById('t_err').innerText,
+            time: new Date().toLocaleString()
+        };
+
+        let logs = JSON.parse(localStorage.getItem('typing_logs') || '[]');
+        logs.unshift(record);
+        localStorage.setItem('typing_logs', JSON.stringify(logs.slice(0, 10)));
+        renderRank();
+        alert(`完成！速度：${record.wpm} WPM`);
+    }
+
+    function renderRank() {
+        const logs = JSON.parse(localStorage.getItem('typing_logs') || '[]');
+        document.getElementById('rankBody').innerHTML = logs.map(l => `
+            <tr>
+                <td>
+                    <span class="rank-tag ${l.lang}-bg">${l.lang.toUpperCase()}</span><br>
+                    <small style="color:#64748b">${l.title}</small>
+                </td>
+                <td><b>${l.wpm}</b></td>
+                <td>${l.acc}% / ${l.err}</td>
+            </tr>
+        `).join('');
+    }
+
+    function clearData() { if(confirm('確定清除所有成績嗎？')) { localStorage.removeItem('typing_logs'); renderRank(); } }
+
+    syncArticles();
+    renderRank();
 </script>
+
 </body>
 </html>
